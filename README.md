@@ -1,5 +1,5 @@
 # fire-dashboard
- Global Fire Dashboard
+ Global Fire Dashboard frontend
 
 ## Installation
 ```shell
