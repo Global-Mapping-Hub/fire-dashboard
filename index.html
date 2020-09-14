@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Global Fire Dashboard</title>
+		<meta charset="utf-8"/>
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+
+		<link rel="shortcut icon" href="./lib/images/favicon.ico" type="image/ico">
+		<meta property="og:url" content="https://maps.greenpeace.org/fire_dashboard/" />
+		<meta property="og:type" content="website" />
+		<meta property="og:title" content="Global Fire Dashboard" />
+		<meta property="og:description" content="Climate change is fueling wildland fires though they are human induced." />
+
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+		<script src="https://unpkg.com/@popperjs/core@2"></script>
+		
+		<link rel="stylesheet" href="./lib/placeholder-loading.css"/>
+		<link rel="stylesheet" href="./lib/style.css"/>
+	</head>
+	<body>
+		<div id="spinner_wrapper"></div>
+		<div id="wrapper">
+			<div id="global_modal_wrapper">
+				<div id="global_modal">
+					<button type="button" class="close" id="global_modal_close">×</button>
+					<div id="global_modal_content">
+						<h3>About the map</h3>
+						<p>Due to catastrophic wildfires every year we lose a huge amount of precious forests and peatlands. A geographic information system (GIS) & remote sensing help to detect, analyse, visualise, predict and fight wildland fires. Using satellite imagery and hot spots detection you can follow the current wildland fire situation in near real-time, analyse previous years fire data, see the temperature and wind forecast and make predictions for the upcoming days. Navigate on this map around the globe to see the current flames and load previous years fire statistics.</p>
+
+						<h3>How to use the dashboard</h3>
+						<p>On the main screen you see the map showing the selected area and real time hotspots. These are <a href="https://earthdata.nasa.gov/earth-observation-data/near-real-time/firms" target="_blank">hotspots</a> from the last hour, provided by the MODIS sensor on Terra and Aqua satellites with a spatial resolution of 1km. In real life a hotspot typically means fire, although occasionally it can be other thermal anomalies, such as lava or gas flares (refineries, oil rigs, etc). The map can’t show the causes of the fires but almost all of them are man-made. On rare occasions they may be the result of dry lightning, a volcano or meteorite.</p>
+						<p>By clicking on the “Data” icon you can add different layers and basemaps.</p>
+						<p>After selecting a country you will see the comparison of the current hotspots with the long-term averages (2001 - 2020). Data is updated every 12 hours. The chart shows 10-day moving averages caculated by smooth function. You can download this diagram on your computer.</p>
+
+						<h3>Authors</h3>
+						<p>Ilona Zhuravleva / <a href="https://maps.greenpeace.org/" target="_blank">Global Mapping Hub</a> — idea, methodology<br>
+						Grigory Kuksin & Lyuda Kryuchkovskaya — idea, methodology<br>
+						Zhenya Naumova — management<br>
+						Alexey Drozdovskiy / <a href="https://maps.greenpeace.org/" target="_blank">Global Mapping Hub</a> — design, methodology, web development<br>
+						Elena Makurina & Polina Stogniy — design<br>
+						Tatiana Vasilieva — text<br></p>
+
+						<p>For any questions or collaboration please contact:<br>
+						Zhenya Naumova zhenya.naumova@greenpeace.org</p>
+						<p>If you have any feedback you can send it to us via <a href="https://docs.google.com/forms/d/e/1FAIpQLSdAzs-kytTMSyY5jL1llS0SMI4GYWUKt2HmuikjieQJDK1ksQ/viewform?usp=sf_link" target="_blank">this form</a></p>
+
+						<p>This work is licensed under a Creative Commons<br>
+						Attribution-NonCommercial-ShareAlike 4.0 International License</p>
+
+						<br>
+						<p>icons: enlarge by Landan Lloyd, minimize by JS, Apps by Three Six Five from the Noun Project</p>
+					</div>
+				</div>
+			</div>
+			<div id="dashboard_wrapper">
+				<!-- header with logos and stuff -->
+				<div class="header_wrapper dash_block">
+					<div class="header_title_wrapper">
+						<div class="map_title">Global Fire Dashboard</div>
+					</div>
+					
+					<div id="global_info_btn">?</div>
+					<a href="https://greenpeace.org/" target="_blank"><div class="logos logo_greenpeace"></div></a>
+					<a href="https://maps.greenpeace.org/" target="_blank"><div class="logos logo_gmh"></div></a>
+				</div>
+
+				<!-- grid setup -->
+				<div id="columns-container">
+					<div id="left-column" class="dashboard-column">
+						<!-- control panel -->
+						<div class="settings_wrapper dash_block">
+							<div class="settings_el">
+								<select id="country_input"></select>
+							</div>
+							<div class="settings_el">
+								<select id="divisions_input"></select>
+							</div>
+							<div class="settings_el">
+								<input type="text" placeholder="Date" autocomplete="off" id="datepicker">
+							</div>
+						</div>
+
+						<!-- count and stats block -->
+						<div class="count_stats_wrapper dash_block">
+							<!-- quick numbers -->
+							<div class="qs_title_style">Hotspots on this day</div>
+							<div id="quick_stats"></div>
+							<!-- debug panel (last update times) -->
+							<div id="debug_wrapper">
+								<div id="last_hs_update"></div>
+							</div>
+						</div>
+
+						<!-- top10 -->
+						<div class="top10_wrapper dash_block">
+							<div id="top10_block"></div>
+							<div id="top10_placeholder"></div>
+							<canvas id="top10_chart" width="300" height="300"></canvas>
+						</div>
+
+						<!-- fire calendar -->
+						<div class="calendar_wrapper dash_block">
+							<a id="calendar_url" href="" target="_blank">
+								<div id="calendar_title" class="calendar_title_style">Global Fire Calendar</div>
+							</a>
+							<div id="calendar_placeholder"></div>
+							<div id="calendar_block"></div>
+						</div>
+					</div>
+					<div id="center-column" class="dashboard-column">
+						<!-- map block -->
+						<div class="map_wrapper dash_block">
+							<!-- map spinner loader whatever  -->
+							<div id="map_spinner"></div>
+
+							<!-- notification with important info -->
+							<div id="map_notification">
+								<div class="map_notification_text">
+									<p>- On Aug 16, 2020 Aqua experienced an anomaly and Aqua MODIS near real-time data processing was on hold until Sep 2, 2020 <a target="_blank" href="https://landweb.modaps.eosdis.nasa.gov/cgi-bin/NRT/displayCase.cgi?esdt=MYD&caseNum=PM_MYD_20229_NRT&caseLocation=cases_data">Read more</a></p> 
+								</div>
+								<button type="button" class="close" id="map_notification_close">×</button>
+							</div>
+
+							<!-- map modal with info -->
+							<div id="map_info_wrapper">
+								<div id="map_info_modal">
+									<button type="button" class="close" id="map_info_modal_close">&times;</button>
+									<div id="map_info_modal_title"></div>
+									<div id="map_info_modal_content"></div>
+									<div id="map_info_modal_attribution"></div>
+									<div id="map_info_modal_url"></div>
+								</div>
+							</div>
+
+							<!-- map color legends -->
+							<div id="gfs_legends">
+								<div id="gfs_temp_legend"></div>
+								<div id="gfs_precip_legend"></div>
+							</div>
+							<div id="sidebar_legends"></div>
+
+							<!-- map container  -->
+							<div id="map"></div>
+
+							<!-- bootstrap sliderJS -->
+							<div id="timeline_wrapper">
+								<input id="timelineSlider" type="text" />
+							</div>
+							
+
+							<!-- map layers control -->
+							<div id="layers_block">
+								<button type="button" class="close" id="layers_block_close">&times;</button>
+								<div class="layers_columns">
+									<div class="layers_default">
+										<div class="layers_block_headline">Data</div>
+										<div class="layers_block_body">
+											<div class="layers_el">
+												<div class="layer_name">
+													<div class="info_question_mark" data-content="hotspots">?</div>
+													<div class="legend_title">Hotspots</div>
+												</div>
+												<div class="toggle">
+													<input id="hotspots_switch" type="checkbox" class="check" checked>
+													<b class="b switch"></b><b class="b track"></b>
+												</div>
+											</div>
+
+											<div class="layers_el">
+												<div class="layer_name">
+													<div class="info_question_mark" data-content="gfstemp">?</div>
+													<div class="legend_title">Temperature</div>
+												</div>
+												<div class="toggle">
+													<input id="gfs_temp_switch" type="checkbox" class="check">
+													<b class="b switch"></b><b class="b track"></b>
+												</div>
+											</div>
+
+											<div class="layers_el">
+												<div class="layer_name">
+													<div class="info_question_mark" data-content="gfsprecip">?</div>
+													<div class="legend_title">Precipitation</div>
+												</div>
+												<div class="toggle">
+													<input id="gfs_precip_switch" type="checkbox" class="check">
+													<b class="b switch"></b><b class="b track"></b>
+												</div>
+											</div>
+
+											<div class="layers_el">
+												<div class="layer_name">
+													<div class="info_question_mark" data-content="gfswind">?</div>
+													<div class="legend_title">Wind</div>
+												</div>
+												<div class="toggle">
+													<input id="gfs_wind_switch" type="checkbox" class="check">
+													<b class="b switch"></b><b class="b track"></b>
+												</div>
+											</div>
+
+											<div class="layers_el">
+												<div class="layer_name">
+													<div class="info_question_mark" data-content="esaland">?</div>
+													<div class="legend_title">Landcover</div>
+												</div>
+												<div class="toggle">
+													<input id="lc_switch_full" type="checkbox" class="check">
+													<b class="b switch"></b><b class="b track"></b>
+												</div>
+											</div>
+										</div>
+										
+										<div id="more_layer_btn">more layers ></div>
+
+										<div class="layers_block_headline">Basemaps</div>
+										<div class="layers_block_body">
+											<div class="layers_el">
+												<div class="layer_name">
+													<div class="info_question_mark" data-content="osm">?</div>
+													<div class="legend_title">Scheme</div>
+												</div>
+												<div class="toggle">
+													<input id="osm_switch" type="checkbox" class="check">
+													<b class="b switch"></b><b class="b track"></b>
+												</div>
+											</div>
+											<div class="layers_el">
+												<div class="layer_name">
+													<div class="info_question_mark" data-content="modissat">?</div>
+													<div class="legend_title">Daily imagery</div>
+												</div>
+												<div class="toggle">
+													<input id="medsat_switch" type="checkbox" class="check">
+													<b class="b switch"></b><b class="b track"></b>
+												</div>
+											</div>
+											<div class="layers_el">
+												<div class="layer_name">
+													<div class="info_question_mark" data-content="esrisat">?</div>
+													<div class="legend_title">High resolution</div>
+												</div>
+												<div class="toggle">
+													<input id="highsat_switch" type="checkbox" class="check">
+													<b class="b switch"></b><b class="b track"></b>
+												</div>
+											</div>
+										</div>
+									</div>
+									<div id="layers_more">
+										<div class="layers_block_headline">&nbsp;</div>
+										<div class="layers_block_body">
+											<div class="layers_el">
+												<div class="layer_name">
+													<div class="info_question_mark" data-content="treecover">?</div>
+													<div class="legend_title">Tree cover</div>
+												</div>
+												<div class="toggle">
+													<input id="treecover_switch" type="checkbox" class="check">
+													<b class="b switch"></b><b class="b track"></b>
+												</div>
+											</div>
+											<div class="layers_el layers_el_density">
+												<div style="font-size:.8em; font-style:italic; margin-right:1em;">Tree cover canopy density</div>
+												<div>
+													<select id="tree_cover_percentage">
+														<option value="10">&gt; 10%</option>
+														<option value="15">&gt; 15%</option>
+														<option value="20">&gt; 20%</option>
+														<option value="25">&gt; 25%</option>
+														<option value="30">&gt; 30%</option>
+														<option value="50">&gt; 50%</option>
+														<option value="75">&gt; 75%</option>
+													</select>
+												</div>
+											</div>
+											<div class="layers_el">
+												<div class="layer_name">
+													<div class="info_question_mark" data-content="treecover_loss">?</div>
+													<div class="legend_title">Tree Cover Loss</div>
+												</div>
+												<div class="toggle">
+													<input id="treecoverloss_switch" type="checkbox" class="check">
+													<b class="b switch"></b><b class="b track"></b>
+												</div>
+											</div>
+											<div class="layers_el">
+												<div class="layer_name">
+													<div class="info_question_mark" data-content="wdpa">?</div>
+													<div class="legend_title">Protected areas</div>
+												</div>
+												<div class="toggle">
+													<input id="wdpa_switch" type="checkbox" class="check">
+													<b class="b switch"></b><b class="b track"></b>
+												</div>
+											</div>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+						<!-- graphchart -->
+						<div class="graph_wrapper dash_block">
+							<!-- chart placeholder -->
+							<div id="chart_placeholder" class="ph-item">
+								<div class="ph-col-12">
+									<div class="chart_placeholder_text">Loading. Please wait...</div>
+									<div class="ph-chart"></div>
+								</div>
+							</div>
+							<!-- chart itself -->
+							<div id="chart_line"></div>
+						</div>
+					</div>
+					<div id="right-column" class="dashboard-column">
+						<!-- landcover numbers -->
+						<div class="landcover_wrapper dash_block">
+							<div id="landcover_stats"></div>
+							<div id="landcover_placeholder"></div>
+							<canvas id="landcover_chart" width="300" height="300"></canvas>
+						</div>
+						
+						<!-- country wildfire situation -->
+						<div class="description_wrapper dash_block">
+							<div class="description_title_style">Causes of fires</div>
+							<div id="description_placeholder"></div>
+							<div id="description_block"></div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</body>
+	<script type="module" src="./dist/bundle.js"></script>
+</html>
