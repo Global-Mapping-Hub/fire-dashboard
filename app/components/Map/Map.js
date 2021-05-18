@@ -14,13 +14,15 @@ import 'georaster';
 import 'georaster-layer-for-leaflet';
 
 import colorLegend from '../ColorLegend';
-import Notification from './Notification';
+import FeedbackModal from '../FeedbackModal';
 import SidebarLegend from './SidebarLegend';
+import MapDateChanger from './MapDateChanger';
+import InfoModal from './InfoModal';
 import {NASAGIBSLayer} from '../../utils/WMSLayers';
 import {TreeCover} from '../../utils/TileLayers';
 
 class Map {
-	constructor(date, cid, divid, cb) {
+	constructor(props) {
 		// init a new map
 		this.map = new L.Map('map', {minZoom: 1});
 
@@ -37,18 +39,50 @@ class Map {
 		this.map.getPane('labels').style.zIndex = 415;
 
 		// set default params
-		this.date = date;
-		this.cid = cid;
-		this.divid = divid;
+		this.translation = props.translation;
+		this.UI = this.translation.ui;
+		this.date = props.date;
+		this.cid = props.cid;
+		this.divid = props.divid;
+		this.onInit = props.onInit;
+
 		this.pbfSource = 'https://maps.greenpeace.org/api/vtiles/rpc/dashboard.hotspots/{z}/{x}/{y}.pbf';
 		this.blockCountryPicker = false;
 
-		// gfs color legends
-		this.temperatureLegend = new colorLegend('gfs_temp_legend', 'TEMP.', '°C');
-		this.precipitationLegend = new colorLegend('gfs_precip_legend', 'PRECIP.', 'mm');
+		// set map texts
+		document.getElementById('map_title').innerText = this.UI.title;
+		document.getElementById('map_legend_data').innerText = this.UI.layers_data;
 
-		// notification
-		this.notification = new Notification();
+		document.getElementById('map_legend_hotspots').innerText = this.UI.layers_hotspots;
+		document.getElementById('map_legend_temperature').innerText = this.UI.layers_temperature;
+		document.getElementById('map_legend_precip').innerText = this.UI.layers_precipitation;
+		document.getElementById('map_legend_wind').innerText = this.UI.layers_wind;
+		document.getElementById('map_legend_landcover').innerText = this.UI.layers_landcover;
+
+		document.getElementById('more_layer_btn').innerText = `${this.UI.layers_more} >`;
+		document.getElementById('map_legend_treecover_density').innerText = this.UI.layers_treecover_density;
+		document.getElementById('map_legend_treecover_loss').innerText = this.UI.layers_treecover_loss;
+		document.getElementById('wdpa').innerText = this.UI.layers_protected_areas;
+
+		document.getElementById('map_legend_basemaps').innerText = this.UI.layers_basemaps;
+		document.getElementById('map_legend_scheme').innerText = this.UI.layers_basemaps_scheme;
+		document.getElementById('map_legend_modis').innerText = this.UI.layers_basemaps_lowrez;
+		document.getElementById('map_legend_esri').innerText = this.UI.layers_basemaps_highrez;
+		document.getElementById('map_legend_treecover').innerText = this.UI.layers_treecover;
+	
+
+		// feedback modal
+		this.feedbackModal = new FeedbackModal({ui: this.UI});
+
+		// info modal
+		this.mapModal = new InfoModal({ui: this.UI});
+
+		// gfs color legends
+		this.temperatureLegend = new colorLegend('gfs_temp_legend', this.UI.map_legend_temp, '°C');
+		this.precipitationLegend = new colorLegend('gfs_precip_legend', this.UI.map_legend_precip, 'mm');
+
+		// fullscreen date changer
+		this.mapDateChanger = new MapDateChanger();
 
 		// GFS data related
 		// calculate which gfs hour to show by default
@@ -76,7 +110,7 @@ class Map {
 			this.initDebug();
 
 			// success callback
-			cb();
+			this.onInit();
 		}.bind(this));
 
 		// show map overview
@@ -139,9 +173,9 @@ class Map {
 			value: firstTick,
 			formatter: function(val) {
 				let value = val*3;
-				let tooltipText = `${(value <= 21) ? 'Today' : 'Tomorrow'}, ${(value <= 21) ? value : value-24}:00 UTC`;
+				let tooltipText = `${(value <= 21) ? this.UI.map_timeline_today : this.UI.map_timeline_tomorrow}, ${(value <= 21) ? value : value-24}:00 UTC`;
 				return tooltipText;
-			},
+			}.bind(this),
 		});
 		// on value change
 		this.timelineSlider.on('slideStop', function(val) {
@@ -165,6 +199,7 @@ class Map {
 		this.updateGFSLayers();
 
 		// map buttons
+		// open settings | layers
 		const settingsBtn = L.Control.extend({
 			options: {
 				position: 'topleft' 
@@ -184,6 +219,22 @@ class Map {
 		});
 		this.map.addControl(new settingsBtn);
 
+		// open feedback modal window
+		const feedbackBtn = L.Control.extend({
+			options: {
+				position: 'topleft' 
+			},
+			onAdd: function() {
+				var button = L.DomUtil.create('div', 'leaflet-bar leaflet-control leaflet-custom-button leaflet-feedback');
+					button.onclick = function() {
+						this.feedbackModal.show();
+					}.bind(this)
+				L.DomEvent.disableClickPropagation(button);
+				return button;
+			}.bind(this)
+		});
+		this.map.addControl(new feedbackBtn);
+
 
 		// button to enlarge the map
 		this.mapIsBigNow = false;
@@ -199,16 +250,23 @@ class Map {
 				L.DomEvent.disableClickPropagation(button); // so you can't click through
 				button.onclick = function() {
 					if (!this.mapIsBigNow) {
+						// change buttons' classes
 						button.classList.add('leaflet-size-control-big')
 						mapContainer.classList.add('fullscreen')
+						// make the map bigger
 						mapElement.style.height = '100%';
+						// set params
 						this.mapIsBigNow = true;
-						this.map.setView([27.99440, 17.55934], 2);
+						this.mapDateChanger.show();
 					} else {
+						// change buttons' classes
 						button.classList.remove('leaflet-size-control-big')
 						mapContainer.classList.remove('fullscreen')
+						// make the map smaller
 						mapElement.style.removeProperty('height');
+						// set params
 						this.mapIsBigNow = false;
+						this.mapDateChanger.hide();
 					}
 					// invalidate the size no matter what
 					this.map.invalidateSize();
@@ -229,12 +287,12 @@ class Map {
 			if (this.moreLayersBoolean) {
 				// hide
 				this.moreLayers.style.display = 'none';
-				this.morelessToggle.innerText = 'more layers >';
+				this.morelessToggle.innerText = `${this.UI.layers_more} >`;
 				this.moreLayersBoolean = false;
 			} else {
 				// show
 				this.moreLayers.style.display = 'block';
-				this.morelessToggle.innerText = '< less layers';
+				this.morelessToggle.innerText = `< ${this.UI.layers_less}`;
 				this.moreLayersBoolean = true;
 			}
 		}.bind(this);
@@ -271,42 +329,71 @@ class Map {
 
 		// modis terra
 		this.medsat_switch.onchange = function(e) {
-			(e.target.checked) ? this.modis_terra.getLayer().addTo(this.map) : this.modis_terra.getLayer().removeFrom(this.map);
+			if (e.target.checked) {
+				this.blockCountryPicker = true;
+				this.modis_terra.getLayer().addTo(this.map);
+			} else {
+				this.blockCountryPicker = false;
+				this.modis_terra.getLayer().removeFrom(this.map);
+			}
 		}.bind(this)
 
 		// esri imagery
 		this.highsat_switch.onchange = function(e) {
-			(e.target.checked) ? this.esriSatImg.addTo(this.map) : this.esriSatImg.removeFrom(this.map);
+			if (e.target.checked) {
+				this.blockCountryPicker = true;
+				this.esriSatImg.addTo(this.map);
+			} else {
+				this.blockCountryPicker = false;
+				this.esriSatImg.removeFrom(this.map);
+			}
 		}.bind(this)
 
 		// osm scheme
 		this.osm_switch.onchange = function(e) {
-			(e.target.checked) ? this.osm.addTo(this.map) : this.osm.removeFrom(this.map);
+			if (e.target.checked) {
+				this.blockCountryPicker = true;
+				this.osm.addTo(this.map);
+			} else {
+				this.blockCountryPicker = false;
+				this.osm.removeFrom(this.map);
+			}
 		}.bind(this)
 
 		// protected areas (wdpa)
 		this.wdpa_switch.onchange = function(e) {
-			(e.target.checked) ? this.wdpa.addTo(this.map) : this.wdpa.removeFrom(this.map);
+			if (e.target.checked) {
+				this.blockCountryPicker = true;
+				this.wdpa.addTo(this.map);
+			} else {
+				this.blockCountryPicker = false;
+				this.wdpa.removeFrom(this.map);
+			}
 		}.bind(this)
 
 		// landcover
 		this.landcoverLegend = new SidebarLegend();
+		// build landcover legend
 		this.lc_switch_full.onchange = function(e) {
 			if (e.target.checked) {
+				this.blockCountryPicker = true;
 				this.landcover.addTo(this.map);
-				this.landcoverLegend.add('title', {
-					'Agriculture': 'rgb(210, 169, 101)',
-					'Forest': 'rgb(21, 119, 100)',
-					'Grassland': 'rgb(204, 219, 152)',
-					'Shrubland': 'rgb(89, 107, 44)',
-					'Sparse vegetation': 'rgb(213, 201, 152)',
-					'Wetland': 'rgb(39, 137, 212)',
-					'Settlement': 'rgb(233, 70, 43)',
-					'Bare': ' rgb(246, 240, 234)',
-					'Water': 'rgb(163, 220, 255)',
-					'Permanent snow and ice': 'rgb(255, 255, 255)',
-				});
+
+				// build parameters
+				let params = {};
+				params[this.translation.landcover[1]] = 'rgb(210, 169, 101)'; // Agriculture
+				params[this.translation.landcover[2]] = 'rgb(21, 119, 100)'; // Forest
+				params[this.translation.landcover[3]] = 'rgb(204, 219, 152)'; // Grassland
+				params[this.translation.landcover[4]] = 'rgb(89, 107, 44)'; // Shrubland
+				params[this.translation.landcover[5]] = 'rgb(213, 201, 152)'; // Sparse vegetation
+				params[this.translation.landcover[6]] = 'rgb(39, 137, 212)'; // Wetland
+				params[this.translation.landcover[7]] = 'rgb(233, 70, 43)'; // Settlement
+				params[this.translation.landcover[8]] = 'rgb(246, 240, 234)'; // Bare
+				params[this.translation.landcover[9]] = 'rgb(163, 220, 255)'; // Water
+				params[this.translation.landcover[10]] = 'rgb(255, 255, 255)'; // Permanent snow and ice
+				this.landcoverLegend.add('title', params);
 			} else {
+				this.blockCountryPicker = false;
 				this.landcover.removeFrom(this.map);
 				this.landcoverLegend.remove();
 			}
@@ -550,12 +637,12 @@ class Map {
 			if (this.map.hasLayer(this.gfsTemperatureLayer)) {
 				value = this.getValueAtLatLng(this.TMPRaster, e.latlng.lat, e.latlng.lng);
 				value = Math.round(value*100)/100
-				text = 'temperature';
+				text = this.UI.map_popup_temperature;
 				popup.setContent(`${text}: ${value} °C`).openOn(this.map);
 			} else if (this.map.hasLayer(this.gfsPrecipitationLayer)) {
 				value = this.getValueAtLatLng(this.PRATERaster, e.latlng.lat, e.latlng.lng);
 				value = Math.round(value*8640*100)/100 // mutiply by 8640 to convert precipitation flux to mm
-				text = 'precipitation';
+				text = this.UI.map_popup_precipitation;
 				popup.setContent(`${text}: ${value} mm`).openOn(this.map);
 			}
 			
@@ -681,9 +768,9 @@ class Map {
 				displayOptions: {
 					velocityType: "Wind",
 					position: "bottomleft",
-					emptyString: "No velocity data",
+					emptyString: this.UI.map_wind_nodata,
 					displayPosition: "bottomleft",
-					displayEmptyString: "No velocity data",
+					displayEmptyString: this.UI.map_wind_nodata,
 					speedUnit: "m/s"
 				},
 				data: res.data,

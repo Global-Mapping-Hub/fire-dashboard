@@ -7,16 +7,29 @@ const colours = {
 	'3': '#D55A00', // high
 	'4': '#D51B00', // extremely high
 };
-const worldData = {
-	'Jan': 2, 'Feb': 1, 'Mar': 1, 'Apr': 1, 'May': 1, 'Jun': 1,
-	'Jul': 3, 'Aug': 4, 'Sep': 4, 'Oct': 2, 'Nov': 1, 'Dec': 2,
-}
 const calendarUrl = 'https://maps.greenpeace.org/projects/firecal/?';
 
 // description class
 class Calendar {
-	constructor() {
+	constructor(props) {
+		this.UI = props.translation.ui;
+		this.worldData = {};
+		this.worldData[this.UI.firecal_january] = 2;
+		this.worldData[this.UI.firecal_february] = 1;
+		this.worldData[this.UI.firecal_march] = 1;
+		this.worldData[this.UI.firecal_april] = 1;
+		this.worldData[this.UI.firecal_may] = 1;
+		this.worldData[this.UI.firecal_june] = 1;
+		this.worldData[this.UI.firecal_july] = 3;
+		this.worldData[this.UI.firecal_august] = 4;
+		this.worldData[this.UI.firecal_september] = 4;
+		this.worldData[this.UI.firecal_october] = 2;
+		this.worldData[this.UI.firecal_november] = 1;
+		this.worldData[this.UI.firecal_december] = 2;
+
 		this.block = document.getElementById('calendar_block');
+		this.title = document.getElementById('calendar_title');
+		this.title.innerText = this.UI.header_calendar
 		this.titleUrl = document.getElementById('calendar_url');
 		this.titleUrl.href = calendarUrl;
 
@@ -27,7 +40,7 @@ class Calendar {
 	}
 	showDefaultData() {
 		this.placeholder.style.display = 'none';
-		for (const [key, value] of Object.entries(worldData)) {
+		for (const [key, value] of Object.entries(this.worldData)) {
 			// create a new block with a circle and a text
 			let el = document.createElement('a');
 				el.className = 'circle_block';

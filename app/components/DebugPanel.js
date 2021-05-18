@@ -4,7 +4,8 @@ import axios from 'axios';
 import {tippyInit} from '../utils/Utilities';
 
 class DebugPanel {
-	constructor() {
+	constructor(props) {
+		this.UI = props.translation.ui;
 		// get dom elements
 		this.wrapper = document.getElementById('debug_wrapper');
 		this.hsMeta = document.getElementById('last_hs_update')
@@ -24,7 +25,7 @@ class DebugPanel {
 		var x = setInterval(function() {
 			// get current minutes
 			var timeLeft = 60 - new Date().getMinutes();
-			this.hsMeta.innerHTML = `Next hotspots update in <strong>${timeLeft}min</strong>`
+			this.hsMeta.innerHTML = `${this.UI.hotspots_next_update} <strong>${timeLeft}min</strong>`
 		}.bind(this), 1000);
 	}
 	requestGFSMeta() {
@@ -38,7 +39,7 @@ class DebugPanel {
 		axios.get(`${this.geotiffFolder}/meta.json?ver=${this.cacheBypass}`).then(function(res) {
 			// last gfs data update
 			var lastUpdate = new Date(Date.parse(res.data.last_update));
-			this.gfsMetaLast.innerHTML = `Last GFS update:<br>${moment(lastUpdate).format('YYYY-MM-DD HH:mm')} UTC`;
+			this.gfsMetaLast.innerHTML = `${this.UI.map_gfs_update}:<br>${moment(lastUpdate).format('YYYY-MM-DD HH:mm')} UTC`;
 			// init tooltips
 			tippyInit();
 
@@ -57,7 +58,7 @@ class DebugPanel {
 				var hours = Math.floor((delta % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
 				var minutes = Math.floor((delta % (1000 * 60 * 60)) / (1000 * 60));
 				// insert data
-				this.gfsMetaNext.innerHTML = `Next GFS update in <strong>${(hours) ? `${hours}h` : ''} ${minutes}m</strong>`
+				//this.gfsMetaNext.innerHTML = `Next GFS update in <strong>${(hours) ? `${hours}h` : ''} ${minutes}m</strong>`
 			}.bind(this), 1000);
 		}.bind(this)
 		).catch(function(err) {

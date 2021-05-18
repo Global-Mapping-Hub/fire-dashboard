@@ -6,27 +6,32 @@ import api from '../utils/API';
 
 // description class
 class Description {
-	constructor() {
+	constructor(props) {
+		// props
+		this.UI = props.translation.ui;
+		this.UI_Descriptions = props.translation.descriptions;
+
+		// dom
 		this.block = document.getElementById('description_block');
+		this.title = document.getElementById('description_title');
+		this.title.innerText = this.UI.header_description;
+
 		this.placeholder = document.getElementById('description_placeholder');
 		this.placeholder.innerHTML = topPlaceholder;
+		
 		this.globalData = {};
 		this.requestData();
-		this.setCountry(1000); // default
+		this.setCountry(1000); // defaults to world
 	}
 	requestData() {
-		axios.get('https://spreadsheets.google.com/feeds/list/1dof4gGAkXROARgpI0ImbRV-YIo0v-1pm_us0CAgJg9c/1/public/full?alt=json')
-		.then(function (out) {
-			let data = xml2js(out);
-			this.placeholder.style.display = 'none';
-			// find default text and set it | at the same time build an object for later use
-			data.forEach(function(entry) {
-				this.globalData[entry.id] = entry.text;
-				// find default text
-				if (entry.id == 0) {
-					this.block.innerHTML = entry.text;
-				}
-			}.bind(this));
+		this.placeholder.style.display = 'none';
+		// find default text and set it | at the same time build an object for later use
+		this.UI_Descriptions.forEach(function(entry) {
+			this.globalData[entry.id] = entry.text;
+			// find default text
+			if (entry.id == 0) {
+				this.block.innerHTML = entry.text;
+			}
 		}.bind(this));
 	}
 	setCountry(cid) {

@@ -4,12 +4,14 @@ import {landcover_template, LCPlaceholder, landcoverChartOptions} from '../utils
 import api from '../utils/API';
 
 class LandcoverStats {
-	constructor(date, cid, divid) {
+	constructor(props) {
 		// init vars
-		this.date = date;
-		this.cid = cid;
-		this.divid = divid;
-		this.emptyMessage = `<div class="nodata">Either there are no hotposts or we can't see them because of clouds</div>`;
+		this.UI = props.translation.ui;
+		this.UILandcover = props.translation.landcover;
+		this.date = props.date;
+		this.cid = props.cid;
+		this.divid = props.divid;
+		this.emptyMessage = `<div class="nodata">${this.UI.landcover_nodata}</div>`;
 
 		// dom elements
 		this.block = document.getElementById('landcover_stats');
@@ -34,7 +36,7 @@ class LandcoverStats {
 			divid: this.divid
 		}).then(function(resp) {
 			// default template
-			this.block.innerHTML = landcover_template();
+			this.block.innerHTML = landcover_template(this.UI.landcover_hover, this.UI.header_landcover);
 
 			// if there is no data
 			if (!resp.data.length) {
@@ -47,8 +49,10 @@ class LandcoverStats {
 				let categoriesArray = [];
 				resp.data.forEach(function(el) {
 					dataArray.push(parseInt(el.count));
-					categoriesArray.push(el.name);
-				});
+					let id = parseInt(el.id);
+					let retrievedName = this.UILandcover[id];
+					categoriesArray.push(retrievedName);
+				}.bind(this));
 
 				// check if graph exists
 				if (!this.barChart) {
@@ -56,7 +60,7 @@ class LandcoverStats {
 					this.chartPlaceholder.innerHTML = '';
 					this.chartDom.style.display = 'block';
 
-					this.barChart = new Chart(this.chartDom.getContext('2d'), landcoverChartOptions(dataArray, categoriesArray));
+					this.barChart = new Chart(this.chartDom.getContext('2d'), landcoverChartOptions(dataArray, categoriesArray, this.UI.barchart_hover));
 				} else {
 					// update existing graph
 					this.chartPlaceholder.innerHTML = '';

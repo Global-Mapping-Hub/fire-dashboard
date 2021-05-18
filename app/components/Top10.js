@@ -4,11 +4,14 @@ import {top10_template, topPlaceholder, topChartOptions} from '../utils/Template
 import api from '../utils/API';
 
 class Top10Block {
-	constructor(date, cid) {
+	constructor(props) {
 		// init vars
-		this.date = date;
-		this.cid = cid;
-		this.emptyMessage = `<div class="nodata">Either there are no hotposts or we can't see them because of clouds</div>`;
+		this.date = props.date;
+		this.cid = props.cid;
+		this.UI = props.translation.ui;
+		this.UICountries = props.translation.countries;
+		this.UISubDiv = props.translation.subdiv;
+		this.emptyMessage = `<div class="nodata">${this.UI.top10_nodata}</div>`;
 
 		// dom elements
 		this.block = document.getElementById('top10_block');
@@ -31,7 +34,7 @@ class Top10Block {
 			cid: this.cid
 		}).then(function(resp) {
 			// default template
-			this.block.innerHTML = top10_template();
+			this.block.innerHTML = top10_template(this.UI.header_top10);
 
 			// if there is no data
 			if (!resp.data.length) {
@@ -43,9 +46,12 @@ class Top10Block {
 				let dataArray = [];
 				let categoriesArray = [];
 				resp.data.forEach(function(el) {
-					dataArray.push(parseInt(el.count));
-					categoriesArray.push(el.name);
-				});
+					var id = parseInt(el.id);
+					var count = parseInt(el.count)
+					var name = (this.UICountries[id]) ? this.UICountries[id] : (this.UISubDiv[id]) ? this.UISubDiv[id] : el.name;
+					dataArray.push(count);
+					categoriesArray.push(name);
+				}.bind(this));
 
 				// check if graph exists
 				if (!this.barChart) {
@@ -53,7 +59,7 @@ class Top10Block {
 					this.chartPlaceholder.innerHTML = '';
 					this.chartDom.style.display = 'block';
 
-					this.barChart = new Chart(this.chartDom.getContext('2d'), topChartOptions(dataArray, categoriesArray));
+					this.barChart = new Chart(this.chartDom.getContext('2d'), topChartOptions(dataArray, categoriesArray, this.UI.barchart_hover));
 				} else {
 					// update existing graph
 					this.chartPlaceholder.innerHTML = '';

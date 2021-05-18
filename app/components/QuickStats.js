@@ -5,11 +5,12 @@ import {qsPlaceholder} from '../utils/Templates';
 import {tippyInit} from '../utils/Utilities';
 
 class QuickStats {
-	constructor(date, cid, divid) {
+	constructor(props) {
 		// init vars
-		this.date = date;
-		this.cid = cid;
-		this.divid = divid;
+		this.UI = props.translation.ui;
+		this.date = props.date;
+		this.cid = props.cid;
+		this.divid = props.divid;
 
 		// init call handler to be able to cancel this slow request
 		this.call;
@@ -17,6 +18,9 @@ class QuickStats {
 		//init country list
 		this.block = document.getElementById('quick_stats');
 		this.block.innerHTML = qsPlaceholder;
+		this.title = document.getElementById('qs_title');
+		this.title.innerText = this.UI.header_hotspots;
+
 		this.requestCountry();
 	}
 
@@ -69,7 +73,7 @@ class QuickStats {
 				// insert html result
 				this.block.innerHTML = `
 					<div id="quick_stats_main" class="${(todayNum > avgNum) ? 'high' : 'low'}">${todayNum}</div>
-					<div id="quick_stats_avg" data-tippy-content="average on this day">${avgNum}</div>
+					<div id="quick_stats_avg" data-tippy-content="${this.UI.hotspots_average}">${avgNum}</div>
 				`;
 				// init tooltips
 				tippyInit();

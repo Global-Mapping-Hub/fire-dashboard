@@ -2,8 +2,12 @@ import api from '../utils/API';
 import 'select2';
 
 class ControlPanel {
-	constructor() {
-		//init country list
+	constructor(props) {
+		// props
+		this.UICountries = props.translation.countries;
+		this.UISubDiv = props.translation.subdiv;
+
+		// init country list
 		this.countryInput = document.getElementById('country_input');
 		this.requestCountryList();
 
@@ -15,9 +19,11 @@ class ControlPanel {
 	requestCountryList() {
 		api.get(`/gcountry`).then(function(resp) {
 			resp.data.forEach(function(el) {
+				var countryId = parseInt(el.country_id);
+				var countryName = this.UICountries[countryId];
 				var option = document.createElement('option');
-					option.value= el.country_id;
-					option.innerHTML = el.country_name;
+					option.value = countryId;
+					option.innerHTML = countryName;
 				this.countryInput.appendChild(option);
 			}.bind(this));
 
@@ -38,9 +44,12 @@ class ControlPanel {
 		if (parseInt(cid) !== 1000) {
 			api.get(`/gdivs/${cid}`).then(function(resp) {
 				resp.data.forEach(function(el) {
+					var divId = parseInt(el.id);
+					var divName = (divId) ? this.UISubDiv[divId] : el.name;
+
 					var option = document.createElement('option');
-						option.value= el.id;
-						option.innerHTML = el.name;
+						option.value = divId;
+						option.innerHTML = divName;
 					this.divisionsInput.appendChild(option);
 				}.bind(this));
 

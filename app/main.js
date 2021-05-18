@@ -12,8 +12,8 @@ import 'leaflet/dist/leaflet.css';
 import 'leaflet-velocity/dist/leaflet-velocity.min.css';
 import '../lib/style.css'
 
+import GlobalModal from './components/GlobalModal';
 import Map from './components/Map/Map';
-import InfoModal from './components/Map/InfoModal';
 import Calendar from './components/FireCalendarBlock';
 import Description from './components/DescriptionBlock';
 import Top10Block from './components/Top10';
@@ -23,6 +23,7 @@ import QuickStats from './components/QuickStats';
 import DebugPanel from './components/DebugPanel';
 import LandcoverStats from './components/LandcoverStats';
 import {tippyInit} from './utils/Utilities';
+import LanguageManager from './utils/Languages';
 
 class App {
 	constructor() {
@@ -34,21 +35,52 @@ class App {
 		this.cid = 1000; // country id - world
 		this.divid = 0; // division id
 	}
+	//
+	loadLanguages(props) {
+		// get translations
+		let language = new LanguageManager({
+			onLoad: props.onLoad
+		});
+		language.langCheck();
+	}
 	// dashboard blocks
-	initElements() {
-		// load debug after map load
-		this.map = new Map(this.date, this.cid, this.divid, function() {
-			this.debug = new DebugPanel(); // on successful map init
-		}.bind(this));
+	initElements(translation) {
 
-		this.ctrlPanel = new ControlPanel();
-		this.top10 = new Top10Block(this.date, this.cid);
-		this.qstats = new QuickStats(this.date, this.cid, this.divid);
-		this.lcstats = new LandcoverStats(this.date, this.cid, this.divid);
-		this.description = new Description();
-		this.mapModal = new InfoModal();
-		this.fireCalendera = new Calendar();
-		this.allCharts = new ChartsData();
+
+		this.ctrlPanel = new ControlPanel({translation: translation});
+
+		this.map = new Map({
+			translation: translation,
+			date: this.date,
+			cid: this.cid,
+			divid: this.divid,
+			onInit: function() {
+				new DebugPanel({translation: translation});
+			}
+		});
+		this.top10 = new Top10Block({
+			translation: translation,
+			date: this.date,
+			cid: this.cid
+		});
+		this.qstats = new QuickStats({
+			translation: translation,
+			date: this.date,
+			cid: this.cid,
+			divid: this.divid
+		});
+		this.lcstats = new LandcoverStats({
+			translation: translation,
+			date: this.date,
+			cid: this.cid,
+			divid: this.divid
+		});
+
+		this.description = new Description({translation: translation}); // REWORK
+
+		this.globalModal = new GlobalModal({translation: translation});
+		this.fireCalendar = new Calendar({translation: translation});
+		this.allCharts = new ChartsData({translation: translation});
 	}
 
 	// do all of this on country change
@@ -75,13 +107,30 @@ class App {
 		// init pikaday | datetime picker
 		this.datepickerDOM = document.getElementById('datepicker');
 		this.datepickerDOM.value = moment().format('YYYY-MM-DD');
-		this.picker = new Pikaday({
+		this.mapDatepickerDOM = document.getElementById('map_datepicker');
+		this.mapDatepickerDOM.value = moment().format('YYYY-MM-DD');
+
+		// main datepicker on the left-hand side
+		new Pikaday({
 			field: this.datepickerDOM,
 			maxDate: this.today,
 			firstDay: 1, // monday
 			onSelect: function(date) {
 				this.date = moment(date).format('YYYY-MM-DD');
+				this.mapDatepickerDOM.value = this.date; // set date on the map date changer
 				this.componentDidUpdate();
+			}.bind(this)
+		});
+
+		// secondary datepicker which sits on the map and which is only visible in the fullscreen mode
+		new Pikaday({
+			field: this.mapDatepickerDOM,
+			maxDate: this.today,
+			firstDay: 1,
+			onSelect: function(date) {
+				let formattedDate = moment(date).format('YYYY-MM-DD');
+				this.datepickerDOM.value = formattedDate;
+				this.datepickerDOM.dispatchEvent(new Event('change'));
 			}.bind(this)
 		});
 
@@ -106,34 +155,6 @@ class App {
 
 		// init tippy tooltips
 		tippyInit();
-
-
-		// modal info window for the map
-		this.infoButtonsList = document.getElementsByClassName('info_question_mark');
-		this.infoModalClose = document.getElementById('map_info_modal_close');
-		for (var i = 0; i < this.infoButtonsList.length; i++) {
-			this.infoButtonsList[i].onclick = function(e) {
-				this.mapModal.show(e.target.dataset.content);
-			}.bind(this)
-		}
-		// close map info modal
-		this.infoModalClose.onclick = function() {
-			this.mapModal.hide()
-		}.bind(this);
-
-
-		// global modal with dashboard info
-		this.globalModal = document.getElementById('global_modal_wrapper');
-		this.globalModalBtn = document.getElementById('global_info_btn');
-		this.globalModalBtn.onclick = function() {
-			this.globalModal.style.display = 'block';
-		}.bind(this);
-
-		// close info modal
-		this.globalModalClose = document.getElementById('global_modal_close');
-		this.globalModalClose.onclick = function() {
-			this.globalModal.style.display = 'none';
-		}.bind(this);
 	}
 
 	// if anything in control panel changes, then do this monstrosity
@@ -155,12 +176,17 @@ class App {
 }
 
 // init Sentry SDK
-Sentry.init({ dsn: 'https://55c10f285c824401b073da5b9a57fc6b@o384079.ingest.sentry.io/5253655' });
+// TODO:uncomment
+//Sentry.init({ dsn: 'https://55c10f285c824401b073da5b9a57fc6b@o384079.ingest.sentry.io/5253655' });
 
 // app init
-var app = new App();
-	app.initElements();
-	app.initControls();
+let app = new App();
+	app.loadLanguages({
+		onLoad: function(translation) {
+			app.initElements(translation);
+			app.initControls();
+		}
+	})
 
 // personal attribution
 console.log({author:"fixxy", conrtib:{code:"99%", design:"95%"}, contacts:""});

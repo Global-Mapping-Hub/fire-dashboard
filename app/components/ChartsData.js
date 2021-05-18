@@ -6,10 +6,15 @@ import api from '../utils/API';
 import {linechartOptions} from '../utils/Templates';
 
 class ChartsData {
-	constructor() {
+	constructor(props) {
+		// props
+		this.UI = props.translation.ui;
+
 		// dom elements
 		this.chartDom = document.getElementById('chart_line');
 		this.placeholder = document.getElementById('chart_placeholder');
+		this.placeholderText = document.getElementById('chart_placeholder_text');
+		this.placeholderText.innerText = this.UI.linechart_loading;
 
 		// call handlers to be able to cancel
 		this.call, this.call2;
@@ -40,7 +45,7 @@ class ChartsData {
 		this.placeholder.style.display = 'none';
 		this.chartDom.style.removeProperty('min-height'); // in case there was a chart here previously
 		this.chartDom.innerHTML =	`<div class="country_placeholder_block">
-										<div class="country_placeholder_text">Choose a country to see detailed graphs</div>
+										<div class="country_placeholder_text">${this.UI.linechart_placeholder}</div>
 										<div class="country_placeholder_background"></div>
 									</div>`;
 	}
@@ -60,7 +65,7 @@ class ChartsData {
 			// check if graph exists
 			if (!this.lineChart) {
 				// create a new graph
-				this.lineChart = new ApexCharts(this.chartDom, linechartOptions(data, this.date));
+				this.lineChart = new ApexCharts(this.chartDom, linechartOptions(data, this.date, this.UI));
 				this.lineChart.render();
 			} else {
 				// update existing graph
@@ -98,7 +103,7 @@ class ChartsData {
 			this.calcAvgData(res.data, function(data) {
 				//console.log(data);
 				this.lineChart.appendSeries({
-					name: 'Long-term averages',
+					name: this.UI.linechart_legend_2,
 					data: data
 				});
 				// hide placeholder and show chart block
