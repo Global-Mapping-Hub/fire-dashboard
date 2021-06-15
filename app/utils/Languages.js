@@ -1,11 +1,16 @@
 import axios from 'axios';
 import {xml2js} from '../utils/Utilities';
 
+const DASHBOARD_LANGUAGE_URL = `https://maps.greenpeace.org/fire_dashboard/?lang=`;
 const DEFAULT_LANGUAGE_SHEET_ID = `1CNovIg4DNxSQ_XF3C7Y4BwGXSdrayiXOcq3hnzCHmZs`; // english
 const LANGUAGES_LIST = `https://spreadsheets.google.com/feeds/list/1TfRNcbzhouso-xj1mxLBtGzkYDTppWlDbeugSQ12RWs/1/public/full?alt=json`;
 
 class LanguageManager {
 	constructor(props) {
+		// dom elements
+		this.block = document.getElementById('header_lang_block');
+		this.select = document.getElementById('language_input');
+		// events
 		this.onLoad = props.onLoad;
 	}
 
@@ -29,15 +34,37 @@ class LanguageManager {
 		let spreadsheetID = DEFAULT_LANGUAGE_SHEET_ID;
 		axios.get(LANGUAGES_LIST).then(function(out) {
 			let data = xml2js(out);
+			// create dropdown
+			this.createDropdown(data);
 			// go over data and find the translation
-			let entry = data.filter(el => (el.language == this.lang))[0];
-			if (entry) { spreadsheetID = entry.spreadsheetid; }
+			let entry = data.filter(el => (el.code == this.lang))[0];
+			if (entry) { spreadsheetID = entry[`spreadsheet-id`]; }
 			// retrieve by id
 			this.retrieveTranslation(spreadsheetID);
 		}.bind(this))
 		.catch(function(err) {
 			this.retrieveTranslation(spreadsheetID);
-		});
+		}.bind(this));
+	}
+
+	// create language dropdown to switch between languages
+	createDropdown(languages) {
+		// populate the dropdown
+		languages.forEach(function(lang) {
+			if (lang.description) {
+				var option = document.createElement('option');
+					option.value = lang.code;
+					option.innerHTML = lang.description;
+				if (this.lang == lang.code) option.selected = 'selected';
+				this.select.appendChild(option);
+			}
+		}.bind(this));
+		
+		// onchange event
+		this.select.onchange = function(e) { window.open(`${DASHBOARD_LANGUAGE_URL}${e.target.value}`,'_self') };
+
+		// init select2 lib
+		$('#language_input').select2();
 	}
 
 	// retrieve translation from the google spreadsheet

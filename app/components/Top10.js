@@ -21,61 +21,62 @@ class Top10Block {
 		this.chartPlaceholder.innerHTML = topPlaceholder;
 		this.requestData();
 	}
-	setDate(date, cid, successCallback) {
+	setDate(date, cid) {
 		this.chartDom.style.display = 'none';
 		this.chartPlaceholder.innerHTML = topPlaceholder;
 		this.date = date;
 		this.cid = cid;
-		this.requestData(successCallback);
+		return this.requestData();
 	}
-	requestData(successCallback) {
-		api.post(`/top10`, {
-			date: this.date,
-			cid: this.cid
-		}).then(function(resp) {
-			// default template
-			this.block.innerHTML = top10_template(this.UI.header_top10);
-
-			// if there is no data
-			if (!resp.data.length) {
-				//clear styling
-				this.chartDom.style.display = 'none';
-				this.chartPlaceholder.innerHTML = this.emptyMessage;
-			} else {
-				// go over data and send it do init the chart
-				let dataArray = [];
-				let categoriesArray = [];
-				resp.data.forEach(function(el) {
-					var id = parseInt(el.id);
-					var count = parseInt(el.count)
-					var name = (this.UICountries[id]) ? this.UICountries[id] : (this.UISubDiv[id]) ? this.UISubDiv[id] : el.name;
-					dataArray.push(count);
-					categoriesArray.push(name);
-				}.bind(this));
-
-				// check if graph exists
-				if (!this.barChart) {
-					// create a new graph
-					this.chartPlaceholder.innerHTML = '';
-					this.chartDom.style.display = 'block';
-
-					this.barChart = new Chart(this.chartDom.getContext('2d'), topChartOptions(dataArray, categoriesArray, this.UI.barchart_hover));
+	requestData() {
+		new Promise(function(resolve, reject) {
+			api.post(`/top10`, {
+				date: this.date,
+				cid: this.cid
+			}).then(function(resp) {
+				// default template
+				this.block.innerHTML = top10_template(this.UI.header_top10);
+	
+				// if there is no data
+				if (!resp.data.length) {
+					//clear styling
+					this.chartDom.style.display = 'none';
+					this.chartPlaceholder.innerHTML = this.emptyMessage;
 				} else {
-					// update existing graph
-					this.chartPlaceholder.innerHTML = '';
-					this.chartDom.style.display = 'block';
-					
-					// update data
-					this.barChart.data.labels = categoriesArray;
-					this.barChart.config.data.datasets[0].data = dataArray;
-					this.barChart.update();
+					// go over data and send it do init the chart
+					let dataArray = [];
+					let categoriesArray = [];
+					resp.data.forEach(function(el) {
+						var id = parseInt(el.id);
+						var count = parseInt(el.count)
+						var name = (this.UICountries[id]) ? this.UICountries[id] : (this.UISubDiv[id]) ? this.UISubDiv[id] : el.name;
+						dataArray.push(count);
+						categoriesArray.push(name);
+					}.bind(this));
+	
+					// check if graph exists
+					if (!this.barChart) {
+						// create a new graph
+						this.chartPlaceholder.innerHTML = '';
+						this.chartDom.style.display = 'block';
+	
+						this.barChart = new Chart(this.chartDom.getContext('2d'), topChartOptions(dataArray, categoriesArray, this.UI.barchart_hover));
+					} else {
+						// update existing graph
+						this.chartPlaceholder.innerHTML = '';
+						this.chartDom.style.display = 'block';
+						
+						// update data
+						this.barChart.data.labels = categoriesArray;
+						this.barChart.config.data.datasets[0].data = dataArray;
+						this.barChart.update();
+					}
 				}
-			}
-
-			if(successCallback)successCallback();
-		}.bind(this)).catch(function(err) {
-			console.log(err);
-		});
+				resolve();
+			}.bind(this)).catch(function(err) {
+				reject(err);
+			});
+		}.bind(this));
 	}
 }
 

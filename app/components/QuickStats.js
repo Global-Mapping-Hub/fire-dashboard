@@ -24,23 +24,22 @@ class QuickStats {
 		this.requestCountry();
 	}
 
-	setParams(date, cid, divid, successCallback) {
-		// init vars
+	setParams(date, cid, divid) {
 		this.date = date;
 		this.cid = cid;
 		this.divid = divid;
-		this.requestCountry(successCallback);
+		this.requestCountry();
 	}
 
-	requestCountry(successCallback) {
+	requestCountry() {
 		// change to placeholder
 		this.block.innerHTML = qsPlaceholder;
 
 		// do the request
-		this.getStats = this.requestCountryHandler(successCallback);
+		this.getStats = this.requestCountryHandler();
 		this.getStats('/quickstats');
 	}
-	requestCountryHandler(successCallback) {
+	requestCountryHandler() {
 		// quick stats on an actual number hotspots vs average
 		return function(url) {
 			// call shenanigans
@@ -77,8 +76,6 @@ class QuickStats {
 				`;
 				// init tooltips
 				tippyInit();
-
-				if(successCallback)successCallback();
 			}.bind(this)).catch(function(err) {
 				console.log(err);
 			});

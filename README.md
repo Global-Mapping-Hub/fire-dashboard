@@ -14,3 +14,8 @@ npm install
 ```shell
 npm run build
 ```
+
+## Development (webpack-dev-server)
+```shell
+npm run start
+```

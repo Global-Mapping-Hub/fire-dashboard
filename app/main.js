@@ -45,18 +45,13 @@ class App {
 	}
 	// dashboard blocks
 	initElements(translation) {
-
-
 		this.ctrlPanel = new ControlPanel({translation: translation});
-
 		this.map = new Map({
 			translation: translation,
 			date: this.date,
 			cid: this.cid,
 			divid: this.divid,
-			onInit: function() {
-				new DebugPanel({translation: translation});
-			}
+			onInit: function() { new DebugPanel({translation: translation}) }
 		});
 		this.top10 = new Top10Block({
 			translation: translation,
@@ -77,7 +72,6 @@ class App {
 		});
 
 		this.description = new Description({translation: translation}); // REWORK
-
 		this.globalModal = new GlobalModal({translation: translation});
 		this.fireCalendar = new Calendar({translation: translation});
 		this.allCharts = new ChartsData({translation: translation});
@@ -160,15 +154,9 @@ class App {
 	// if anything in control panel changes, then do this monstrosity
 	componentDidUpdate() {
 		this.map.setParams(this.date, this.cid, this.divid);
-		this.top10.setDate(this.date, this.cid, function() {
-			console.log('top10 loaded');
-			this.lcstats.setParams(this.date, this.cid, this.divid, function() {
-				console.log('landcover loaded');
-				this.qstats.setParams(this.date, this.cid, this.divid, function() {
-					console.log('quickstats loaded');
-				}.bind(this));
-			}.bind(this));
-		}.bind(this));
+		this.top10.setDate(this.date, this.cid)
+		.then(function() { return this.lcstats.setParams(this.date, this.cid, this.divid)}.bind(this))
+		.then(function() { this.qstats.setParams(this.date, this.cid, this.divid) }.bind(this))
 		
 		// re-init tippy in case new elements appeared
 		tippyInit();
@@ -176,8 +164,7 @@ class App {
 }
 
 // init Sentry SDK
-// TODO:uncomment
-//Sentry.init({ dsn: 'https://55c10f285c824401b073da5b9a57fc6b@o384079.ingest.sentry.io/5253655' });
+Sentry.init({ dsn: 'https://55c10f285c824401b073da5b9a57fc6b@o384079.ingest.sentry.io/5253655' });
 
 // app init
 let app = new App();
