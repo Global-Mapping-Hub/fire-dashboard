@@ -12,6 +12,7 @@ import 'leaflet-tilelayer-pixelfilter';
 import 'leaflet-velocity';
 import 'georaster';
 import 'georaster-layer-for-leaflet';
+import * as esri from 'esri-leaflet';
 
 import colorLegend from '../ColorLegend';
 import FeedbackModal from '../FeedbackModal';
@@ -35,6 +36,8 @@ class Map {
 		this.map.getPane('hotspots').style.zIndex = 405;
 		this.map.createPane('borders');
 		this.map.getPane('borders').style.zIndex = 410;
+		this.map.createPane('wdpa');
+		this.map.getPane('wdpa').style.zIndex = 413;
 		this.map.createPane('labels');
 		this.map.getPane('labels').style.zIndex = 415;
 
@@ -578,23 +581,26 @@ class Map {
 		});
 
 		// WDPA protected areas
-		this.wdpa = L.vectorGrid.protobuf(`/api/vtiles/vector.wdpa_sep2020/{z}/{x}/{y}.pbf`, {
-			rendererFactory: L.canvas.tile,
-			attribution: '',
-			vectorTileLayerStyles: {
-				'vector.wdpa_sep2020': {
-					fill: true,
-					fillColor: 'white',
-					fillOpacity: 0.2,
-					color: 'white',
-					opacity: 0.3,
-					weight: 1,
-				},
-			},
+		this.wdpa = esri.dynamicMapLayer({
+			url: 'https://gis.unep-wcmc.org/arcgis/rest/services/wdpa/public/MapServer/',
+			pane: 'wdpa',
 			interactive: true,
-			pane: 'basemaps'
+			opacity: 0.7
 		});
 
+		// wdpa onclick event handler
+		this.map.on('click', function(e) {
+			if (this.map.hasLayer(this.wdpa)) {
+				// send identify request
+				this.wdpa.identify().on(this.map).at(e.latlng).run(function(error,featureCollection) {
+					if (error) { return; }
+					// make sure at least one feature was identified.
+					if (featureCollection.features.length > 0) {
+						this.onWdpaClickHandler(e.latlng, featureCollection.features[0].properties);
+					}
+				}.bind(this));
+			}
+		}.bind(this));
 
 		// tree cover layers
 		this.treeCover = new TreeCover();
@@ -602,6 +608,13 @@ class Map {
 			pane: 'basemaps',
 			attribution: 'Hansen/UMD/Google/USGS/NASA',
 		});
+	}
+
+	// WDPA onclick
+	onWdpaClickHandler(latlng, props) {
+		this.map.closePopup();
+		let wdpaPopup = L.popup().setLatLng([latlng.lat, latlng.lng]);
+		wdpaPopup.setContent(`${props.NAME}`).openOn(this.map);
 	}
 
 	// tile layer interactivity

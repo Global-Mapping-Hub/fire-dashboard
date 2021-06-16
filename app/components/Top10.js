@@ -29,7 +29,7 @@ class Top10Block {
 		return this.requestData();
 	}
 	requestData() {
-		new Promise(function(resolve, reject) {
+		return new Promise(function(resolve, reject) {
 			api.post(`/top10`, {
 				date: this.date,
 				cid: this.cid
