@@ -437,6 +437,9 @@ span.circle {
 #chart_line svg text {
 	fill: white;
 }
+#chart_description {
+	display: none;
+}
 
 /* charts styling - placeholder */
 .nodata {
@@ -866,6 +869,7 @@ span.circle {
 /*****************************/
 .apexcharts-legend-text {
 	color: white !important;
+	font-size: 12px !important;
 }
 .apexcharts-toolbar {
 	display: none;

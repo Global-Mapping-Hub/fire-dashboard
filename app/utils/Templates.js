@@ -128,7 +128,7 @@ export function linechartOptions(out, date, ui) {
 	const currentYear = parseInt(date.split('-')[0]);
 	return {
 		series: [{
-			name: ui.linechart_legend_1,
+			name: `${currentYear} ${ui.linechart_legend_1}`,
 			data: out
 		}],
 		chart: {
@@ -150,12 +150,15 @@ export function linechartOptions(out, date, ui) {
 		dataLabels: {
 			enabled: false
 		},
+
+		/*
 		title: {
-			text: [`${currentYear} ${ui.linechart_title_line1} `, `${ui.linechart_title_line2}`, `${ui.linechart_title_line3} (2001-${currentYear})`],
+			text: undefined,
 			align: 'center',
 			offsetX: 0,
 			offsetY: 10,
 		},
+		*/
 		stroke: {
 			width: 2,
 		},

@@ -15,6 +15,9 @@ class ChartsData {
 		this.placeholder = document.getElementById('chart_placeholder');
 		this.placeholderText = document.getElementById('chart_placeholder_text');
 		this.placeholderText.innerText = this.UI.linechart_loading;
+		
+		this.chartDescription = document.getElementById('chart_description');
+		this.chartDescription.innerText = this.UI.linechart_description;
 
 		// call handlers to be able to cancel
 		this.call, this.call2;
@@ -40,6 +43,7 @@ class ChartsData {
 		}
 	}
 	reset() {
+		this.hideInfo();
 		try {this.lineChart.destroy()} catch {}
 		this.lineChart = null;
 		this.placeholder.style.display = 'none';
@@ -102,13 +106,16 @@ class ChartsData {
 		return api.post(url, { cid: this.cid, divid: this.divid }, {cancelToken: this.call2.token}).then(function(res) {
 			this.calcAvgData(res.data, function(data) {
 				//console.log(data);
+				let currentYear = new Date().getFullYear();
 				this.lineChart.appendSeries({
-					name: this.UI.linechart_legend_2,
+					name: `${this.UI.linechart_legend_2} (2001-${currentYear})`,
 					data: data
 				});
 				// hide placeholder and show chart block
 				this.placeholder.style.display = 'none';
 				this.chartDom.style.display = 'block';
+				// also show description
+				this.showInfo();
 			}.bind(this))
 		}.bind(this)).catch(function(err) {
 			console.log(err);
@@ -155,6 +162,10 @@ class ChartsData {
 		// return the newly create array
 		cb(outArray);
 	}
+
+	// show/hide the description
+	showInfo() { this.chartDescription.style.display = 'block' }
+	hideInfo() { this.chartDescription.style.display = 'none' }
 }
 
 export default ChartsData;
