@@ -503,13 +503,18 @@ class Map {
 		// hide controls
 		let leafletControls = document.querySelector('.leaflet-control-container')
 			leafletControls.style.display = 'none';
+		// hide borders
+		this.map.getPane('borders').style.display = 'none';
 
 		html2canvas(document.getElementById('map'), {
 			allowTaint:false, logging:false, useCORS:true
 		}).then(function(canvas) {
-			// get everything back
+			// show controls again
 			leafletControls.style.display = 'block';
+			// hide temp logos
 			this.hideLogos();
+			// show borders again
+			this.map.getPane('borders').style.display = 'block';
 
 			let imageData = atob(canvas.toDataURL().split(',')[1]);
 			let arraybuffer = new ArrayBuffer(imageData.length);
