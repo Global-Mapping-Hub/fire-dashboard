@@ -3,6 +3,7 @@ import 'bootstrap';
 import Slider from 'bootstrap-slider';
 import axios from 'axios';
 import chroma from 'chroma-js';
+import html2canvas from 'html2canvas';
 
 import L from 'leaflet';
 import 'leaflet-ajax';
@@ -51,6 +52,9 @@ class Map {
 
 		this.pbfSource = 'https://maps.greenpeace.org/api/vtiles/rpc/dashboard.hotspots/{z}/{x}/{y}.pbf';
 		this.blockCountryPicker = false;
+
+		// elements
+		this.mapLoader = document.getElementById('map_spinner');
 
 		// set map texts
 		document.getElementById('map_title').innerText = this.UI.title;
@@ -118,6 +122,7 @@ class Map {
 
 		// show map overview
 		this.defaultMapView();
+		this.initMapLogos();
 
 		/* 
 		* Workaround for 1px lines appearing in some browsers due to fractional transforms
@@ -188,6 +193,15 @@ class Map {
 		}.bind(this));
 	}
 
+	// show map spinner
+	showLoader() {
+		this.mapLoader.style.display = 'block';
+	}
+	// hide map spinner
+	hideLoader() {
+		this.mapLoader.style.display = 'none';
+	}
+
 	// init control elements
 	initControls() {
 		// custom map buttons
@@ -237,6 +251,25 @@ class Map {
 			}.bind(this)
 		});
 		this.map.addControl(new feedbackBtn);
+
+		// save a screenshot of the map
+		const screenshotBtn = L.Control.extend({
+			options: {
+				position: 'topleft' 
+			},
+			onAdd: function() {
+				var button = L.DomUtil.create('div', 'leaflet-bar leaflet-control leaflet-custom-button leaflet-screenshot');
+					button.onclick = function() {
+						this.showLoader();
+						this.showLogos();
+						this.saveMapScreenshot();
+					}.bind(this)
+				L.DomEvent.disableClickPropagation(button);
+				return button;
+			}.bind(this)
+		});
+		this.map.addControl(new screenshotBtn);
+
 
 
 		// button to enlarge the map
@@ -464,6 +497,68 @@ class Map {
 			this.treeCover.setPercentage(e.target.value);
 		}.bind(this)
 	}
+
+	/** save screenshot of the current map view */
+	saveMapScreenshot() {
+		// hide controls
+		let leafletControls = document.querySelector('.leaflet-control-container')
+			leafletControls.style.display = 'none';
+
+		html2canvas(document.getElementById('map'), {
+			allowTaint:false, logging:false, useCORS:true
+		}).then(function(canvas) {
+			// get everything back
+			leafletControls.style.display = 'block';
+			this.hideLogos();
+
+			let imageData = atob(canvas.toDataURL().split(',')[1]);
+			let arraybuffer = new ArrayBuffer(imageData.length);
+			let view = new Uint8Array(arraybuffer);
+			for (var i=0; i < imageData.length; i++) view[i] = imageData.charCodeAt(i) & 0xff;
+			let blob = null;
+			try {
+				blob = new Blob([arraybuffer], {type: 'application/octet-stream'});
+			} catch (e) {
+				let bb = new (window.WebKitBlobBuilder || window.MozBlobBuilder);
+				bb.append(arraybuffer);
+				blob = bb.getBlob('application/octet-stream'); // <-- Here's the Blob
+			}
+			
+			// Use the URL object to create a temporary URL
+			let uri = (window.webkitURL || window.URL).createObjectURL(blob);
+			let link = document.createElement('a');
+			if (typeof link.download === 'string') {
+				link.href = uri;
+				link.download = 'image.png';
+				//Firefox requires the link to be in the body
+				document.body.appendChild(link);
+				//simulate click
+				link.click();
+				//remove the link when done
+				document.body.removeChild(link);
+			} else {
+				window.open(uri);
+			}
+		}.bind(this))
+		.finally(function() { this.hideLoader() }.bind(this));
+	}
+
+
+	initMapLogos() {
+		this.mapLogos = document.createElement('div');
+		this.mapLogos.id = 'map_logos';
+		this.mapLogos.innerHTML = `<img class="map_logo_gp" src="./lib/images/GP-logo-2019-white.svg">`
+		document.getElementById('map').appendChild(this.mapLogos);
+	}
+	/** show logos and other stuff when taking a screenshot */
+	showLogos() {
+		this.mapLogos.style.display = 'block';
+	}
+	/** hide logos control */
+	hideLogos() {
+		this.mapLogos.style.display = 'none';
+	}
+
 	// check if all GFS layers are hidden, in which case proceed
 	timelineVisibility() {
 		// if any of the gfs are shown

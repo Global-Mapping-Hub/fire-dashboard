@@ -43,6 +43,7 @@
     "file-loader": "^6.1.0",
     "georaster": "^1.2.0",
     "georaster-layer-for-leaflet": "^0.6.8",
+    "html2canvas": "^1.1.4",
     "jquery": "^3.5.1",
     "leaflet": "^1.7.1",
     "leaflet-ajax": "^2.1.0",
