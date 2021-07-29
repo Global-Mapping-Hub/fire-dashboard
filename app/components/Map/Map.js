@@ -547,7 +547,7 @@ class Map {
 	initMapLogos() {
 		this.mapLogos = document.createElement('div');
 		this.mapLogos.id = 'map_logos';
-		this.mapLogos.innerHTML = `<img class="map_logo_gp" src="./lib/images/GP-logo-2019-white.svg">`
+		this.mapLogos.innerHTML = `<img class="map_logo_gp" src="./lib/images/GP-logo-2019-white.png">`
 		document.getElementById('map').appendChild(this.mapLogos);
 	}
 	/** show logos and other stuff when taking a screenshot */
