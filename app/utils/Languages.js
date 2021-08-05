@@ -12,6 +12,16 @@ class LanguageManager {
 		this.select = document.getElementById('language_input');
 		// events
 		this.onLoad = props.onLoad;
+		// axios 404 retry
+		axios.interceptors.response.use(response => response, (error) => {
+			const status = error.response ? error.response.status : null
+			const originalRequest = error.config
+			if (status === 404) {
+				return axios(originalRequest)
+			} else {
+				return Promise.reject(error)
+			}
+		});
 	}
 
 	// check available languages
