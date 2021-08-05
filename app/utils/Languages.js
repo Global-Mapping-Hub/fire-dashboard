@@ -16,7 +16,7 @@ class LanguageManager {
 		axios.interceptors.response.use(response => response, (error) => {
 			const status = error.response ? error.response.status : null
 			const originalRequest = error.config
-			if (status === 404 || status === 500) {
+			if (status === 404) {
 				return axios(originalRequest)
 			} else {
 				return Promise.reject(error)
